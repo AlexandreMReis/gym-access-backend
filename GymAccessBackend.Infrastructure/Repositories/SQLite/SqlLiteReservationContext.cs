@@ -2,11 +2,11 @@
 
 namespace GymAccessBackend.Infrastructure.Repositories.SQLite
 {
-    public class ReservationContext : DbContext
+    public class SqlLiteReservationContext : DbContext
     {
         public DbSet<Core.Models.ReservationModel> Reservations { get; set; }
         public string DbPath { get; }
-        public ReservationContext()
+        public SqlLiteReservationContext()
         {
             DbPath = "reservations.db";
         }

@@ -1,6 +1,7 @@
 ﻿using GymAccessBackend.Core.Enums;
 using GymAccessBackend.Core.Interfaces;
 using GymAccessBackend.Core.Models;
+using QRCoder;
 
 namespace GymAccessBackend.Core.Logic
 {
@@ -33,68 +34,70 @@ namespace GymAccessBackend.Core.Logic
                 });
                 if (reservationId == null)
                 {
-                    //TODO log error to file
-                    return new Result<string>("Failed to save reservation.");
+                    return new Result<string>("Failed to save reservation.", isSuccess: false);
                 }
 
-                string qrCode = await GenerateQrCodeAsync(email);
-                if (string.IsNullOrWhiteSpace(qrCode))
+                byte[] qrCodeBytes = await GenerateQrCodeBytesAsync(email);
+                if (qrCodeBytes == null || qrCodeBytes.Length == 0)
                 {
-                    //TODO log error to file
-                    return new Result<string>("QR code generation failed.");
+                    return new Result<string>("QR code generation failed.", isSuccess: false);
                 }
+                var qrCodeBase64 = Convert.ToBase64String(qrCodeBytes);
 
                 var success = await _paymentService.ProcessPaymentAsync(cardNumber, cardHolder, 15.0m);
                 if (!success)
                 {
-                    //TODO log error to file
-                    return new Result<string>("Payment processing failed.");
+                    return new Result<string>("Payment processing failed.", isSuccess: false);
                 }
 
                 success = await _reservationRepository.UpdateReservationStatusAndQrCodeAsync(
                     reservationId.GetValueOrDefault(), 
                     ReservationStatus.Confirmed, 
-                    qrCode, 
+                    qrCodeBase64, 
                     "System"
                 );
                 if (!success)
                 {
-                    //TODO log error to file
-                    return new Result<string>($"Failed to update reservation status and qr code.");
+                    return new Result<string>($"Failed to update reservation status and qr code.", isSuccess: false);
                 }
 
-                success = await _emailService.SendEmailAsync(email, "Reservation Confirmation",
-                    $"Your reservation for {dayRequested.ToShortDateString()} has been confirmed. Your QR code is: {qrCode}");
+                const string qrCodeContentId = "reservation-qr-code";
+                var htmlBody = $"<html><body><p>Your reservation for {dayRequested.ToShortDateString()} has been confirmed.</p><p>Your QR code:</p><img src='cid:{qrCodeContentId}' alt='QR Code' /></body></html>";
+                success = await _emailService.SendEmailAsync(
+                    email,
+                    "Reservation Confirmation",
+                    htmlBody,
+                    qrCodeBytes,
+                    qrCodeContentId);
                 if (!success)
                 {
-                    //TODO log error to file
-                    return new Result<string>("Failed to save reservation on database.");
+                    return new Result<string>("Failed to save reservation on database.", isSuccess: false);
                 }
 
                 await _reservationRepository.SaveEmailSentByReservationIdAsync(reservationId.GetValueOrDefault());
 
-                // For now, return a dummy success result to satisfy return requirements
-                return new Result<string>(qrCode);
+                return new Result<string>(qrCodeBase64);
             }
             catch (Exception ex)
             {
-                //TODO log error to file
-                return new Result<string>($"An error occurred while processing the purchase: {ex.Message}");
+                return new Result<string>($"An error occurred while processing the purchase: {ex.Message}", isSuccess: false);
             }
         }
 
-        private async Task<string> GenerateQrCodeAsync(string email)
+        private async Task<byte[]> GenerateQrCodeBytesAsync(string email)
         {
             try
             {
-                //TODO create qr code based on the email and utcnow ?
                 await Task.Yield();
-                throw new NotImplementedException("QR code generation logic is not implemented yet.");
+                var qrGenerator = new QRCodeGenerator();
+                var qrCodeData = qrGenerator.CreateQrCode(email, QRCodeGenerator.ECCLevel.Q);
+                var qrCode = new PngByteQRCode(qrCodeData);
+                return qrCode.GetGraphic(20);
             }
             catch (Exception)
             {
-                //TODO log error to file
-                return string.Empty;
+                // TODO log error to file
+                return Array.Empty<byte>();
             }
         }
     }

@@ -1,5 +1,7 @@
 ﻿using GymAccessBackend.Core.Interfaces;
 using GymAccessBackend.Core.Logic;
+using GymAccessBackend.Infrastructure.Repositories.InMemory;
+using GymAccessBackend.Infrastructure.Services;
 
 namespace GymAccessBackend.WebAPI
 {
@@ -15,6 +17,9 @@ namespace GymAccessBackend.WebAPI
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection serviceCollection)
         {
             // Add any infrastructure services here, e.g., database, email, payment external services, etc.
+            serviceCollection.AddScoped<IReservationRepository, InMemoryReservationRepository>();
+            serviceCollection.AddScoped<IEmailService, StubEmailService>();
+            serviceCollection.AddScoped<IPaymentService, StubPaymentService>();
 
             return serviceCollection;
         }

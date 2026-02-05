@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GymAccessBackend.Core\GymAccessBackend.Core.csproj" />
+    <ProjectReference Include="..\GymAccessBackend.Infrastructure\GymAccessBackend.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

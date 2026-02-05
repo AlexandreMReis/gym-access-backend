@@ -5,12 +5,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GymAccessBackend.Infrastructure.Repositories.SQLite
 {
-    public class ReservationRepository : IReservationRepository
+    public class SqlLiteReservationRepository : IReservationRepository
     {
-        private ReservationContext _db;
-        public ReservationRepository()
+        private SqlLiteReservationContext _db;
+        public SqlLiteReservationRepository()
         {
-            _db = new ReservationContext();
+            _db = new SqlLiteReservationContext();
         }
         public async Task<ReservationModel> GetReservationByCustomerEmailAsync(string email)
         {

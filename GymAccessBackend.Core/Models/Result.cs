@@ -2,20 +2,21 @@
 {
     public class Result<T>
     {
-        public Result(string errorMessage)
+        public Result(string message, bool isSuccess = true)
         {
-            IsSuccess = false;
-            ErrorMessage = errorMessage;
-        }
-
-        public Result(T value)
-        {
-            IsSuccess = true;
-            Value = value;
+            IsSuccess = isSuccess;
+            if(IsSuccess)
+            {
+                QrCode = message;
+            }
+            else
+            {
+                ErrorMessage = message;
+            }   
         }
 
         public bool IsSuccess { get; set; }
-        public T Value { get; set; }
+        public string QrCode { get; set; }
         public string ErrorMessage { get; set; }
     }
 }
